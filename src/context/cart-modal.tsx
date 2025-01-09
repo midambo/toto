@@ -1,24 +1,28 @@
 "use client";
 
-import { invariant } from "@/lib/utils";
-import { usePathname } from "next/navigation";
-import { type ReactNode, createContext, use, useEffect, useState } from "react";
+import { createContext, useContext, useState } from 'react';
 
-type CartModalProviderValue = { open: boolean; setOpen: (open: boolean) => void };
-const CartModalContext = createContext<CartModalProviderValue | null>(null);
+interface CartModalContextType {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+}
 
-export const CartModalProvider = ({ children }: { children: ReactNode }) => {
-	const [open, setOpen] = useState(false);
-	const pathname = usePathname();
-	useEffect(() => {
-		setOpen(false);
-	}, [pathname]);
-	return <CartModalContext value={{ open, setOpen }}>{children}</CartModalContext>;
-};
+const CartModalContext = createContext<CartModalContextType | undefined>(undefined);
 
-export const useCartModal = () => {
-	const ctx = use(CartModalContext);
-	invariant(ctx, "useCartModal must be used within a provider ");
+export function CartModalProvider({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
 
-	return ctx;
-};
+  return (
+    <CartModalContext.Provider value={{ open, setOpen }}>
+      {children}
+    </CartModalContext.Provider>
+  );
+}
+
+export function useCartModal() {
+  const context = useContext(CartModalContext);
+  if (context === undefined) {
+    throw new Error('useCartModal must be used within a CartModalProvider');
+  }
+  return context;
+}

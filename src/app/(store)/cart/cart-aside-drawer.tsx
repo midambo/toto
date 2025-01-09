@@ -1,30 +1,20 @@
 "use client";
 
-import { useCartModal } from "@/context/cart-modal";
-import { Drawer, DrawerContent, DrawerTitle } from "@/ui/shadcn/drawer";
-import { useMediaQuery } from "@/ui/shadcn/hooks/use-media-query";
-import type { ReactNode } from "react";
+import { Sheet, SheetContent } from "@/ui/shadcn/sheet";
+import { CartModalPage } from "./cart-modal";
 
-export const CartAsideDrawer = ({ children }: { children: ReactNode }) => {
-	const { open, setOpen } = useCartModal();
-
-	const isDesktop = useMediaQuery("(min-width: 640px)");
-
-	return (
-		<Drawer open={open} shouldScaleBackground={true} direction={isDesktop ? "right" : "bottom"}>
-			<DrawerTitle className="sr-only">Shopping cart</DrawerTitle>
-			<DrawerContent
-				className="sm:fixed sm:bottom-0 sm:left-auto sm:right-0 sm:top-0 sm:mt-0 sm:flex sm:h-full sm:w-1/2 sm:flex-col sm:overflow-hidden sm:rounded-none sm:bg-white sm:shadow-xl lg:w-1/3"
-				aria-describedby="cart-overlay-description"
-				onPointerDownOutside={() => {
-					setOpen(false);
-				}}
-				onEscapeKeyDown={() => {
-					setOpen(false);
-				}}
-			>
-				{children}
-			</DrawerContent>
-		</Drawer>
-	);
-};
+export function CartAsideDrawer({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent className="w-full max-w-lg sm:max-w-xl">
+        <CartModalPage />
+      </SheetContent>
+    </Sheet>
+  );
+}

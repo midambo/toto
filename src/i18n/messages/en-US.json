@@ -1,0 +1,27 @@
+{
+  "Global": {
+    "error": {
+      "title": "Something went wrong!",
+      "goBackLink": "Go back to home"
+    },
+    "globalError": {
+      "title": "Critical Error",
+      "criticalError": "A critical error occurred",
+      "moreDetails": "More details",
+      "tryAgainButton": "Try again"
+    },
+    "metadata": {
+      "title": "Toto - Online Shopping",
+      "description": "Shop online for the best products"
+    },
+    "cart": {
+      "title": "Shopping Cart",
+      "empty": "Your cart is empty",
+      "total": "Total",
+      "quantity": "Quantity: {quantity}",
+      "shippingAndTaxesInfo": "Shipping and taxes will be calculated at checkout",
+      "goToPaymentButton": "Go to payment",
+      "openFullView": "Open full view"
+    }
+  }
+}

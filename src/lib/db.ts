@@ -116,6 +116,99 @@ export class CartDB {
     return data.map(this.mapProduct);
   }
 
+  async getCategoryBySlug(slug: string) {
+    const { data, error } = await supabase
+      .from('categories')
+      .select(`
+        id,
+        name,
+        slug,
+        description,
+        image_url
+      `)
+      .eq('slug', slug)
+      .single();
+
+    if (error) {
+      console.error('Error fetching category:', error);
+      throw new Error(`Error fetching category: ${error.message}`);
+    }
+
+    if (!data) {
+      throw new Error(`Category not found: ${slug}`);
+    }
+
+    return {
+      id: data.id,
+      name: data.name,
+      slug: data.slug,
+      description: data.description,
+      imageUrl: data.image_url
+    };
+  }
+
+  async getProducts(options?: { 
+    categoryId?: string; 
+    limit?: number;
+    offset?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }) {
+    let query = supabase
+      .from('products')
+      .select('*');
+
+    if (options?.categoryId) {
+      query = query.eq('category_id', options.categoryId);
+    }
+
+    if (options?.sortBy) {
+      query = query.order(options.sortBy, { 
+        ascending: options.sortOrder === 'asc' 
+      });
+    }
+
+    if (options?.limit) {
+      query = query.limit(options.limit);
+    }
+
+    if (options?.offset) {
+      query = query.range(
+        options.offset, 
+        options.offset + (options.limit || 10) - 1
+      );
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching products:', error);
+      return [];
+    }
+
+    return data.map(product => ({
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      currency: 'KES',
+      images: product.image ? [product.image] : [],
+      metadata: {
+        stock: product.stock_quantity,
+        brand: product.brand,
+        color: product.color,
+        weight: product.weight,
+        dimensions: product.dimensions,
+        features: product.features,
+        slug: product.id,
+      },
+      default_price: {
+        unit_amount: product.price * 100, // Convert to cents
+        currency: 'KES'
+      }
+    }));
+  }
+
   private mapProduct(product: any): Product {
     return {
       id: product.id,
@@ -145,3 +238,11 @@ export const db = new CartDB();
 
 export const getFeaturedProducts = (limit?: number) => db.getFeaturedProducts(limit);
 export const getNewProducts = (limit?: number) => db.getNewProducts(limit);
+export const getCategoryBySlug = (slug: string) => db.getCategoryBySlug(slug);
+export const getProducts = (options?: { 
+  categoryId?: string; 
+  limit?: number;
+  offset?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}) => db.getProducts(options);

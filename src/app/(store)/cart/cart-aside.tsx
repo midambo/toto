@@ -1,14 +1,15 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useCartModal } from "@/context/cart-modal";
 import { CartAsideDrawer } from "./cart-aside-drawer";
 
-export const CartAsideContainer = ({
-	children,
-}: {
-	children: ReactNode;
-}) => {
-	return (
-		<CartAsideDrawer>
-			<div className="flex h-full min-h-[80vh] flex-col">{children}</div>
-		</CartAsideDrawer>
-	);
-};
+export function CartAsideContainer({ children }: { children: React.ReactNode }) {
+  const { open, setOpen } = useCartModal();
+
+  return (
+    <CartAsideDrawer 
+      isOpen={open} 
+      onClose={() => setOpen(false)} 
+    />
+  );
+}

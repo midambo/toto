@@ -1,25 +1,36 @@
 "use client";
 
-import { invariant } from "@/lib/utils";
-import { type ReactNode, createContext, use } from "react";
-import { getMessagesInternal } from "./server";
-import type { IntlNamespaceKeys } from "./types";
+import { createContext, useContext, useEffect, useState } from 'react';
+import { useLocale, useTranslations as useNextTranslations } from 'next-intl';
 
-type IntlClientProviderValue = { messages: IntlMessages; locale: string };
-const IntlClientContext = createContext<IntlClientProviderValue | null>(null);
+interface I18nContextType {
+  locale: string;
+}
 
-export const IntlClientProvider = ({
-	messages,
-	locale,
-	children,
-}: { messages: IntlMessages; locale: string; children: ReactNode }) => {
-	return <IntlClientContext value={{ locale, messages }}>{children}</IntlClientContext>;
-};
+const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
-export const useTranslations = <TNamespaceKey extends IntlNamespaceKeys = never>(
-	namespaceKey: TNamespaceKey,
-) => {
-	const ctx = use(IntlClientContext);
-	invariant(ctx, "useTranslations must be used within a IntlClientProvider");
-	return getMessagesInternal(namespaceKey, ctx.locale, ctx.messages);
-};
+export function IntlClientProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const locale = useLocale();
+
+  return (
+    <I18nContext.Provider value={{ locale }}>
+      {children}
+    </I18nContext.Provider>
+  );
+}
+
+export function useI18n() {
+  const context = useContext(I18nContext);
+  if (context === undefined) {
+    throw new Error('useI18n must be used within an IntlClientProvider');
+  }
+  return context;
+}
+
+export function useTranslations(namespace: string) {
+  return useNextTranslations(namespace);
+}

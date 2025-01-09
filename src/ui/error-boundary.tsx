@@ -14,10 +14,12 @@ export function ErrorBoundary({
     console.error('Error caught by boundary:', error);
   }, [error]);
 
+  const errorMessage = error?.message || 'Something went wrong';
+
   return (
     <div className="container mx-auto p-8 text-center">
-      <h2 className="text-2xl font-bold mb-4">Something went wrong!</h2>
-      <p className="text-gray-600 mb-4">{error.message}</p>
+      <h2 className="text-2xl font-bold mb-4">Oops!</h2>
+      <p className="text-gray-600 mb-4">{errorMessage}</p>
       <button
         onClick={reset}
         className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"

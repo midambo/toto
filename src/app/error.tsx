@@ -1,28 +1,33 @@
 "use client";
 
-import { useTranslations } from "@/i18n/client";
-import { Button } from "@/ui/shadcn/button";
-import { YnsLink } from "@/ui/yns-link";
 import { useEffect } from "react";
 
 export default function Error({
-	error,
+  error,
+  reset,
 }: {
-	error: Error & { digest?: string };
-	reset: () => void;
+  error: Error & { digest?: string };
+  reset: () => void;
 }) {
-	useEffect(() => {
-		console.error(error);
-	}, [error]);
+  useEffect(() => {
+    // Log the error to an error reporting service
+    console.error("App-level error:", error);
+  }, [error]);
 
-	const t = useTranslations("Global.error");
+  const errorMessage = error?.message || "An unexpected error occurred";
 
-	return (
-		<main className="mx-auto max-w-xl flex-auto text-center">
-			<h1 className="mb-8 mt-8 text-4xl font-black">{t("title")}</h1>
-			<Button variant="link" asChild>
-				<YnsLink href="/">{t("goBackLink")}</YnsLink>
-			</Button>
-		</main>
-	);
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center">
+      <div className="rounded-lg bg-white p-8 shadow-lg">
+        <h1 className="mb-4 text-2xl font-bold">Something went wrong!</h1>
+        <p className="mb-4 text-gray-600">{errorMessage}</p>
+        <button
+          onClick={reset}
+          className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+        >
+          Try again
+        </button>
+      </div>
+    </div>
+  );
 }
