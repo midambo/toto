@@ -3,7 +3,6 @@ import { cn, formatMoney } from "@/lib/utils";
 import { RadioGroup, RadioGroupItem } from "@/ui/shadcn/radio-group";
 import type * as Commerce from "commerce-kit";
 import { useOptimistic, useTransition } from "react";
-import type Stripe from "stripe";
 
 export const ShippingRatesSection = ({
 	shippingRates,
@@ -96,13 +95,9 @@ export const FormatDeliveryEstimate = ({
 type i18n = ReturnType<typeof useTranslations<"Global.deliveryEstimates">>;
 const deliveryUnitToText = (
 	value: number,
-	unit: Stripe.ShippingRate.DeliveryEstimate.Maximum.Unit | Stripe.ShippingRate.DeliveryEstimate.Minimum.Unit,
+	unit: "business_day" | "day" | "hour" | "month" | "week",
 	t: i18n,
 ) => {
-	switch (unit) {
-		case "business_day":
-			return t("businessDay", { count: value });
-		default:
-			return t(unit, { count: value });
-	}
+	const key = value === 1 ? unit : `${unit}s`;
+	return t(key, { value });
 };

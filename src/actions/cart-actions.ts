@@ -1,123 +1,132 @@
 "use server";
 
-import { clearCartCookie, getCartCookieJson, setCartCookieJson } from "@/lib/cart";
-import * as Commerce from "commerce-kit";
-import { revalidateTag } from "next/cache";
+import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
+import { getCartCookieJson, setCartCookie, CART_COOKIE } from "@/lib/cart";
+import * as Commerce from "@/lib/commerce";
+import { db } from "@/lib/db";
+import { v4 as uuidv4 } from 'uuid';
 
 export async function getCartFromCookiesAction() {
-	const cartJson = await getCartCookieJson();
-	if (!cartJson) {
-		return null;
-	}
+  const cartId = await cookies().get(CART_COOKIE)?.value;
+  if (!cartId) {
+    return null;
+  }
 
-	const cart = await Commerce.cartGet(cartJson.id);
-	if (cart) {
-		return structuredClone(cart);
-	}
-	return null;
+  try {
+    const { id } = getCartCookieJson(cartId);
+    return await db.getCart(id);
+  } catch {
+    return null;
+  }
 }
 
 export async function setInitialCartCookiesAction(cartId: string, linesCount: number) {
-	await setCartCookieJson({
-		id: cartId,
-		linesCount,
-	});
-	revalidateTag(`cart-${cartId}`);
+  setCartCookie({ id: cartId, linesCount });
+  revalidatePath(`cart-${cartId}`);
 }
 
 export async function findOrCreateCartIdFromCookiesAction() {
-	const cart = await getCartFromCookiesAction();
-	if (cart) {
-		return structuredClone(cart);
-	}
+  const existingCartId = await cookies().get(CART_COOKIE)?.value;
+  if (existingCartId) {
+    try {
+      const { id } = getCartCookieJson(existingCartId);
+      const existingCart = await db.getCart(id);
+      if (existingCart) {
+        return id;
+      }
+    } catch {}
+  }
 
-	const newCart = await Commerce.cartCreate();
-	await setCartCookieJson({
-		id: newCart.id,
-		linesCount: 0,
-	});
-	revalidateTag(`cart-${newCart.id}`);
-
-	return newCart.id;
+  const newCartId = uuidv4();
+  setCartCookie({ id: newCartId, linesCount: 0 });
+  return newCartId;
 }
 
-export async function clearCartCookieAction() {
-	const cookie = await getCartCookieJson();
-	if (!cookie) {
-		return;
-	}
+export async function deleteCartCookiesAction() {
+  const cartId = await cookies().get(CART_COOKIE)?.value;
+  if (!cartId) {
+    return;
+  }
 
-	await clearCartCookie();
-	revalidateTag(`cart-${cookie.id}`);
-	// FIXME not ideal, revalidate per domain instead (multi-tenant)
-	revalidateTag(`admin-orders`);
+  try {
+    const { id } = getCartCookieJson(cartId);
+    await db.deleteCart(id);
+    cookies().delete(CART_COOKIE);
+    revalidatePath(`cart-${id}`);
+  } catch {}
 }
 
-export async function addToCartAction(formData: FormData) {
-	const productId = formData.get("productId");
-	if (!productId || typeof productId !== "string") {
-		throw new Error("Invalid product ID");
-	}
+export async function addToCartAction(productId: string) {
+  const cartId = await findOrCreateCartIdFromCookiesAction();
+  const cart = await db.getCart(cartId);
+  const product = await Commerce.getProduct(productId);
+  
+  if (!cart || !product) {
+    throw new Error("Invalid cart or product");
+  }
 
-	const cart = await getCartFromCookiesAction();
+  const existingItem = cart.items.find(item => item.productId === productId);
+  const updatedItems = existingItem
+    ? cart.items.map(item =>
+        item.productId === productId
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      )
+    : [...cart.items, { productId, quantity: 1 }];
 
-	const updatedCart = await Commerce.cartAdd({ productId, cartId: cart?.cart.id });
+  await db.updateCart(cartId, updatedItems);
+  revalidatePath(`cart-${cartId}`);
+}
 
-	if (updatedCart) {
-		await setCartCookieJson({
-			id: updatedCart.id,
-			linesCount: Commerce.cartCount(updatedCart.metadata),
-		});
+export async function updateQuantityAction(cartId: string, productId: string, quantity: number) {
+  const cart = await db.getCart(cartId);
+  if (!cart) {
+    throw new Error("Cart not found");
+  }
 
-		revalidateTag(`cart-${updatedCart.id}`);
-		return structuredClone(updatedCart);
-	}
+  const updatedItems = quantity > 0
+    ? cart.items.map(item =>
+        item.productId === productId
+          ? { ...item, quantity }
+          : item
+      )
+    : cart.items.filter(item => item.productId !== productId);
+
+  await db.updateCart(cartId, updatedItems);
+  revalidatePath(`cart-${cartId}`);
 }
 
 export async function increaseQuantity(productId: string) {
-	const cart = await getCartFromCookiesAction();
-	if (!cart) {
-		throw new Error("Cart not found");
-	}
-	await Commerce.cartChangeQuantity({
-		productId,
-		cartId: cart.cart.id,
-		operation: "INCREASE",
-	});
+  const cartId = await findOrCreateCartIdFromCookiesAction();
+  const cart = await db.getCart(cartId);
+  
+  if (!cart) {
+    throw new Error("Cart not found");
+  }
+
+  const item = cart.items.find(item => item.productId === productId);
+  if (item) {
+    await updateQuantityAction(cartId, productId, item.quantity + 1);
+  } else {
+    await addToCartAction(productId);
+  }
 }
 
 export async function decreaseQuantity(productId: string) {
-	const cart = await getCartFromCookiesAction();
-	if (!cart) {
-		throw new Error("Cart not found");
-	}
-	await Commerce.cartChangeQuantity({
-		productId,
-		cartId: cart.cart.id,
-		operation: "DECREASE",
-	});
+  const cartId = await findOrCreateCartIdFromCookiesAction();
+  const cart = await db.getCart(cartId);
+  
+  if (!cart) {
+    throw new Error("Cart not found");
+  }
+
+  const item = cart.items.find(item => item.productId === productId);
+  if (item) {
+    await updateQuantityAction(cartId, productId, item.quantity - 1);
+  }
 }
 
-export async function setQuantity({
-	productId,
-	cartId,
-	quantity,
-}: {
-	productId: string;
-	cartId: string;
-	quantity: number;
-}) {
-	const cart = await getCartFromCookiesAction();
-	if (!cart) {
-		throw new Error("Cart not found");
-	}
-	await Commerce.cartSetQuantity({ productId, cartId, quantity });
-}
-
-export async function commerceGPTRevalidateAction() {
-	const cart = await getCartCookieJson();
-	if (cart) {
-		console.log("Revalidating cart", cart);
-		revalidateTag(`cart-${cart.id}`);
-	}
+export async function clearCartCookieAction() {
+  cookies().delete(CART_COOKIE);
 }

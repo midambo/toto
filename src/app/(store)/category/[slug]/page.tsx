@@ -1,54 +1,59 @@
 import { publicUrl } from "@/env.mjs";
 import { getTranslations } from "@/i18n/server";
-import { deslugify } from "@/lib/utils";
+import { getCategoryBySlug, getProducts } from "@/lib/db";
 import { ProductList } from "@/ui/products/product-list";
-import * as Commerce from "commerce-kit";
-import { notFound } from "next/navigation";
+import { Separator } from "@/ui/shadcn/separator";
 import type { Metadata } from "next/types";
 
-export const generateMetadata = async (props: {
-	params: Promise<{ slug: string }>;
-}): Promise<Metadata> => {
-	const params = await props.params;
-	const products = await Commerce.productBrowse({
-		first: 100,
-		filter: { category: params.slug },
-	});
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
+  const category = await getCategoryBySlug(params.slug);
+  if (!category) return {};
 
-	if (products.length === 0) {
-		return notFound();
-	}
+  return {
+    title: category.name,
+    description: category.description || undefined,
+    openGraph: {
+      title: category.name,
+      description: category.description || undefined,
+      url: `${publicUrl}/category/${category.slug}`,
+      images: category.image ? [{ url: category.image }] : undefined,
+    },
+  };
+}
 
-	const t = await getTranslations("/category.metadata");
+export default async function CategoryPage({ params }: { params: { slug: string } }) {
+  const [t, category] = await Promise.all([
+    getTranslations(),
+    getCategoryBySlug(params.slug),
+  ]);
 
-	return {
-		title: t("title", { categoryName: deslugify(params.slug) }),
-		alternates: { canonical: `${publicUrl}/category/${params.slug}` },
-	};
-};
+  if (!category) {
+    return (
+      <div className="container py-8">
+        <h1 className="text-2xl font-bold">Category not found</h1>
+        <p className="text-muted-foreground">
+          The category you're looking for doesn't exist.
+        </p>
+      </div>
+    );
+  }
 
-export default async function CategoryPage(props: {
-	params: Promise<{ slug: string }>;
-}) {
-	const params = await props.params;
-	const products = await Commerce.productBrowse({
-		first: 100,
-		filter: { category: params.slug },
-	});
+  const products = await getProducts(category.id);
 
-	if (products.length === 0) {
-		return notFound();
-	}
-
-	const t = await getTranslations("/category.page");
-
-	return (
-		<main className="pb-8">
-			<h1 className="text-3xl font-bold leading-none tracking-tight text-foreground">
-				{deslugify(params.slug)}
-				<div className="text-lg font-semibold text-muted-foreground">{t("title")}</div>
-			</h1>
-			<ProductList products={products} />
-		</main>
-	);
+  return (
+    <div className="container py-8">
+      <div className="space-y-1">
+        <h1 className="text-3xl font-bold tracking-tight">{category.name}</h1>
+        {category.description && (
+          <p className="text-muted-foreground">{category.description}</p>
+        )}
+      </div>
+      <Separator className="my-4" />
+      <ProductList products={products} />
+    </div>
+  );
 }

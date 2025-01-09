@@ -2,12 +2,10 @@ import { getLocale, getTranslations } from "@/i18n/server";
 import { getCartCookieJson } from "@/lib/cart";
 import { findMatchingCountry } from "@/lib/countries";
 import { formatMoney, formatProductName } from "@/lib/utils";
-import { paymentMethods } from "@/ui/checkout/checkout-card";
 import { ClearCookieClientComponent } from "@/ui/checkout/clear-cookie-client-component";
 import { Markdown } from "@/ui/markdown";
 import { Badge } from "@/ui/shadcn/badge";
-import type { PaymentIntent } from "@stripe/stripe-js";
-import * as Commerce from "commerce-kit";
+import * as Commerce from "@/lib/commerce";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { type ComponentProps, Fragment } from "react";
@@ -21,18 +19,14 @@ export const generateMetadata = async (): Promise<Metadata> => {
 
 export default async function OrderDetailsPage(props: {
 	searchParams: Promise<{
-		payment_intent?: string | string[] | undefined | null;
-		payment_intent_client_secret?: string | string[] | undefined | null;
+		order_id?: string | string[] | undefined | null;
 	}>;
 }) {
 	const searchParams = await props.searchParams;
-	if (
-		typeof searchParams.payment_intent !== "string" ||
-		typeof searchParams.payment_intent_client_secret !== "string"
-	) {
+	if (typeof searchParams.order_id !== "string") {
 		return <div>Invalid order details</div>;
 	}
-	const order = await Commerce.orderGet(searchParams.payment_intent);
+	const order = await Commerce.orderGet(searchParams.order_id);
 
 	if (!order) {
 		return <div>Order not found</div>;
@@ -50,7 +44,7 @@ export default async function OrderDetailsPage(props: {
 			<ClearCookieClientComponent cartId={order.order.id} cookieId={cookie?.id} />
 			<h1 className="mt-4 inline-flex items-center text-3xl font-bold leading-none tracking-tight">
 				{t("title")}
-				<PaymentStatus status={order.order.status} />
+				<OrderStatus status={order.order.status} />
 			</h1>
 			<p className="mt-2">{t("description")}</p>
 			<dl className="mt-12 space-y-2 text-sm">
@@ -261,21 +255,28 @@ export default async function OrderDetailsPage(props: {
 	);
 }
 
-const PaymentStatus = async ({ status }: { status: PaymentIntent.Status }) => {
-	const t = await getTranslations("/order.paymentStatus");
-	const statusToVariant = {
-		canceled: "destructive",
-		processing: "secondary",
-		requires_action: "destructive",
-		requires_capture: "destructive",
-		requires_confirmation: "destructive",
-		requires_payment_method: "destructive",
-		succeeded: "default",
-	} satisfies Record<PaymentIntent.Status, ComponentProps<typeof Badge>["variant"]>;
+function OrderStatus({ status }: { status: string }) {
+	let color: ComponentProps<typeof Badge>["variant"] = "outline";
+	let text = status;
+
+	switch (status) {
+		case "completed":
+			color = "default";
+			text = "Completed";
+			break;
+		case "processing":
+			color = "secondary";
+			text = "Processing";
+			break;
+		case "cancelled":
+			color = "destructive";
+			text = "Cancelled";
+			break;
+	}
 
 	return (
-		<Badge className="ml-2 capitalize" variant={statusToVariant[status]}>
-			{t(status)}
+		<Badge className="ml-2" variant={color}>
+			{text}
 		</Badge>
 	);
-};
+}

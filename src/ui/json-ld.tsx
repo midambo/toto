@@ -1,7 +1,8 @@
 import { formatProductName } from "@/lib/utils";
-import type * as Commerce from "commerce-kit";
-import { getDecimalFromStripeAmount } from "commerce-kit/currencies";
-import type { ItemList, Product, Thing, WebSite, WithContext } from "schema-dts";
+import { publicUrl } from "@/env.mjs";
+import type * as Commerce from "@/lib/commerce";
+import type { Product } from "@/lib/commerce-types";
+import type { ItemList, Thing, WebSite, WithContext } from "schema-dts";
 import type Stripe from "stripe";
 
 export const JsonLd = <T extends Thing>({ jsonLd }: { jsonLd: WithContext<T> }) => {
@@ -45,28 +46,28 @@ export const accountToWebsiteJsonLd = ({
 	account,
 	logoUrl,
 }: {
-	account: Stripe.Account | null | undefined;
-	logoUrl: string | null | undefined;
-}): WithContext<WebSite> => {
-	return {
-		"@context": "https://schema.org",
-		"@type": "WebSite",
-		name: account?.business_profile?.name ?? "Your Next Store",
-		url: account?.business_profile?.url ?? "https://yournextstore.com",
-		mainEntityOfPage: {
-			"@type": "WebPage",
-			url: account?.business_profile?.url ?? "https://yournextstore.com",
-		},
-		...(logoUrl && {
-			image: {
-				"@type": "ImageObject",
-				url: logoUrl,
-			},
-		}),
-		publisher: {
-			"@type": "Organization",
+		account: Stripe.Account | null | undefined;
+		logoUrl: string | null | undefined;
+	}): WithContext<WebSite> => {
+		return {
+			"@context": "https://schema.org",
+			"@type": "WebSite",
 			name: account?.business_profile?.name ?? "Your Next Store",
 			url: account?.business_profile?.url ?? "https://yournextstore.com",
-		},
+			mainEntityOfPage: {
+				"@type": "WebPage",
+				url: account?.business_profile?.url ?? "https://yournextstore.com",
+			},
+			...(logoUrl && {
+				image: {
+					"@type": "ImageObject",
+					url: logoUrl,
+				},
+			}),
+			publisher: {
+				"@type": "Organization",
+				name: account?.business_profile?.name ?? "Your Next Store",
+				url: account?.business_profile?.url ?? "https://yournextstore.com",
+			},
+		};
 	};
-};

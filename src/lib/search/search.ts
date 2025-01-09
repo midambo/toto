@@ -1,6 +1,6 @@
-import * as Commerce from "commerce-kit";
 import { unstable_cache } from "next/cache";
 import { simpleSearch } from "./simplesearch";
+import * as Commerce from "../commerce";
 
 export const searchProducts = unstable_cache(
 	async (query: string) => {

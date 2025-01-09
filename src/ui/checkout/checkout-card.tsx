@@ -1,44 +1,26 @@
-import { getLocale, getTranslations } from "@/i18n/server";
-import amex from "@/images/payments/amex.svg";
-import blik from "@/images/payments/blik.svg";
-import google_pay from "@/images/payments/google_pay.svg";
-import klarna from "@/images/payments/klarna.svg";
-import link from "@/images/payments/link.svg";
-import mastercard from "@/images/payments/mastercard.svg";
-import p24 from "@/images/payments/p24.svg";
-import visa from "@/images/payments/visa.svg";
-import { isDefined } from "@/lib/utils";
-import { StripePayment } from "@/ui/checkout/stripe-payment";
-import * as Commerce from "commerce-kit";
+import { getLocale } from "@/i18n/server";
+import { useTranslations } from "next-intl";
+import { Card, CardContent, CardHeader } from "@/ui/primitives/card";
+import { CartItems } from "@/ui/checkout/cart-items.client";
+import { ShippingRatesSection } from "@/ui/checkout/shipping-rates-section";
+import { cn } from "@/lib/utils";
 
-export const paymentMethods = {
-	amex,
-	blik,
-	google_pay,
-	klarna,
-	link,
-	mastercard,
-	p24,
-	visa,
-};
-
-export const CheckoutCard = async ({ cart }: { cart: Commerce.Cart }) => {
-	const shippingRates = await Commerce.shippingBrowse();
-	const t = await getTranslations("/cart.page");
-	const locale = await getLocale();
+export const CheckoutCard = ({
+	className,
+}: {
+	className?: string;
+}) => {
+	const t = useTranslations("/cart.page");
 
 	return (
-		<section className="max-w-md pb-12">
-			<h2 className="text-3xl font-bold leading-none tracking-tight">{t("checkoutTitle")}</h2>
-			<p className="mb-4 mt-2 text-sm text-muted-foreground">{t("checkoutDescription")}</p>
-			<StripePayment
-				shippingRateId={cart.cart.metadata.shippingRateId}
-				shippingRates={structuredClone(shippingRates)}
-				allProductsDigital={cart.lines.every((line) =>
-					isDefined(line.product.shippable) ? !line.product.shippable : false,
-				)}
-				locale={locale}
-			/>
-		</section>
+		<Card className={cn("w-full", className)}>
+			<CardHeader>
+				<h1 className="text-2xl font-bold">{t("title")}</h1>
+			</CardHeader>
+			<CardContent className="space-y-8">
+				<CartItems />
+				<ShippingRatesSection />
+			</CardContent>
+		</Card>
 	);
 };
