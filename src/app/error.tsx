@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { Button } from "@/ui/shadcn/button";
 
 export default function Error({
   error,
@@ -10,23 +11,20 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log the error to an error reporting service
-    console.error("App-level error:", error);
+    console.error(error);
   }, [error]);
-
-  const errorMessage = error?.message || "An unexpected error occurred";
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center">
-      <div className="rounded-lg bg-white p-8 shadow-lg">
-        <h1 className="mb-4 text-2xl font-bold">Something went wrong!</h1>
-        <p className="mb-4 text-gray-600">{errorMessage}</p>
-        <button
+      <div className="space-y-4 text-center">
+        <h1 className="text-4xl font-bold">Something went wrong!</h1>
+        <p className="text-lg text-gray-600">We're sorry for the inconvenience.</p>
+        <Button
           onClick={reset}
-          className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+          className="rounded-full px-8"
         >
           Try again
-        </button>
+        </Button>
       </div>
     </div>
   );

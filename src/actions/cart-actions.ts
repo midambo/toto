@@ -6,7 +6,8 @@ import * as Commerce from "@/lib/commerce";
 import { db } from "@/lib/db";
 
 export async function getCartFromCookiesAction() {
-  const cartCookie = await cookies().get(CART_COOKIE);
+  const cookieStore = cookies();
+  const cartCookie = await cookieStore.get(CART_COOKIE);
   if (!cartCookie?.value) {
     return null;
   }
@@ -20,7 +21,8 @@ export async function getCartFromCookiesAction() {
 }
 
 export async function findOrCreateCartIdFromCookiesAction() {
-  const cartCookie = await cookies().get(CART_COOKIE);
+  const cookieStore = cookies();
+  const cartCookie = await cookieStore.get(CART_COOKIE);
   if (cartCookie?.value) {
     try {
       const { id } = getCartCookieJson(cartCookie.value);
@@ -33,12 +35,13 @@ export async function findOrCreateCartIdFromCookiesAction() {
 
   // Generate a simple timestamp-based ID
   const newCartId = `cart_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-  setCartCookie({ id: newCartId, linesCount: 0 });
+  await setCartCookie({ id: newCartId, linesCount: 0 });
   return newCartId;
 }
 
 export async function deleteCartCookiesAction() {
-  const cartCookie = await cookies().get(CART_COOKIE);
+  const cookieStore = cookies();
+  const cartCookie = await cookieStore.get(CART_COOKIE);
   if (!cartCookie?.value) {
     return;
   }
@@ -46,7 +49,7 @@ export async function deleteCartCookiesAction() {
   try {
     const { id } = getCartCookieJson(cartCookie.value);
     await db.deleteCart(id);
-    cookies().delete(CART_COOKIE);
+    await cookieStore.delete(CART_COOKIE);
   } catch {
     // Ignore errors when deleting
   }
@@ -65,7 +68,7 @@ export async function addToCartAction(cartId: string, productId: string) {
     await db.addToCart(cartId, productId);
     const updatedCart = await db.getCart(cartId);
     if (updatedCart) {
-      setCartCookie({ id: cartId, linesCount: updatedCart.items.length });
+      await setCartCookie({ id: cartId, linesCount: updatedCart.items.length });
     }
   }
 }
@@ -87,7 +90,7 @@ export async function updateQuantityAction(
 
   const updatedCart = await db.getCart(cartId);
   if (updatedCart) {
-    setCartCookie({ id: cartId, linesCount: updatedCart.items.length });
+    await setCartCookie({ id: cartId, linesCount: updatedCart.items.length });
   }
 }
 

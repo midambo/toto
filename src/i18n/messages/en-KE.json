@@ -22,6 +22,25 @@
       "shippingAndTaxesInfo": "Shipping and taxes will be calculated at checkout",
       "goToPaymentButton": "Go to payment",
       "openFullView": "Open full view"
+    },
+    "errors": {
+      "default": "Something went wrong",
+      "required": "This field is required",
+      "invalid_email": "Invalid email address",
+      "min_length": "Must be at least {min} characters",
+      "max_length": "Must be at most {max} characters"
     }
+  },
+  "Cart": {
+    "title": "Shopping Cart",
+    "empty": "Your cart is empty",
+    "checkout": "Checkout",
+    "subtotal": "Subtotal",
+    "total": "Total",
+    "remove": "Remove",
+    "quantity": "Quantity",
+    "shippingAndTaxesInfo": "Shipping and taxes will be calculated at checkout",
+    "goToPaymentButton": "Go to payment",
+    "openFullView": "Open full view"
   }
 }

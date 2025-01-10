@@ -22,6 +22,21 @@
       "shippingAndTaxesInfo": "Shipping and taxes will be calculated at checkout",
       "goToPaymentButton": "Go to payment",
       "openFullView": "Open full view"
+    },
+    "newsletter": {
+      "title": "Subscribe to our newsletter",
+      "description": "Stay up to date with our latest products and offers",
+      "button": "Subscribe",
+      "placeholder": "Enter your email",
+      "success": "Thank you for subscribing!",
+      "error": "Something went wrong. Please try again."
+    },
+    "errors": {
+      "default": "Something went wrong",
+      "required": "This field is required",
+      "invalid_email": "Invalid email address",
+      "min_length": "Must be at least {min} characters",
+      "max_length": "Must be at most {max} characters"
     }
   }
 }

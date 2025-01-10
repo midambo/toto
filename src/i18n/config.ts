@@ -1,4 +1,2 @@
-export const locales = ['en-US', 'en-KE'] as const;
-export const defaultLocale = 'en-KE' as const;
-
-export type Locale = typeof locales[number];
+// This file is kept to prevent import errors
+// All i18n functionality has been removed

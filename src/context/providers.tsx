@@ -1,7 +1,7 @@
 'use client';
 
 import { CartModalProvider } from './cart-modal';
-import { ThemeProvider } from './theme-provider';
+import { ThemeProvider } from 'next-themes';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -12,7 +12,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       disableTransitionOnChange
     >
       <CartModalProvider>
-        {children}
+        <div className="flex min-h-full flex-1 flex-col bg-white" vaul-drawer-wrapper="">
+          {children}
+        </div>
       </CartModalProvider>
     </ThemeProvider>
   );
